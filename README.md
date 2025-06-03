@@ -34,8 +34,6 @@ ENV_SWITCH.ini
    GameDir=C:\Program Files (x86)\Steam\steamapps\common\ELDEN RING NIGHTREIGN\Game
    SteamID=76561198142145846
 
-3. (Optional) Create a desktop shortcut to ENV_SWITCH.exe and assign the included eldenring.ico.
-
 🚀 How to Use It
 1. Run ENV_SWITCH.exe
 2. Choose:
