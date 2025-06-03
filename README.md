@@ -12,8 +12,8 @@ It automatically:
 - Launches the game with the correct executable or Steam URI
 
 📦 What’s Included
-ENV_SWITCH.exe
-ENV_SWITCH.ini
+- Nightshift.exe
+- config.ini
 
 🖥 Requirements
 - SeamlessCoop installed in the Elden Ring Nightreign folder
@@ -21,7 +21,7 @@ ENV_SWITCH.ini
 
 ⚙️ Setup Instructions
 1. Extract all files into any folder (e.g., Desktop\ERNR_SWITCHER)
-2. Open ENV_SWITCH.ini and update the following:
+2. Open config.ini and update the following:
    [Paths]
    - GameDir=FULL_PATH_TO_YOUR_ELDEN_RING_NIGHTREIGN\Game
    - SteamID=YOUR_STEAM_ID
@@ -34,13 +34,14 @@ ENV_SWITCH.ini
    - GameDir=C:\Program Files (x86)\Steam\steamapps\common\ELDEN RING NIGHTREIGN\Game
    - SteamID=1234567890
 
+
 🚀 How to Use It
-1. Run ENV_SWITCH.exe
+1. Run Nightshift.exe
 2. Choose:
    - [1] Start LIVE environment
    - [2] Start MODDED environment
 3. If you choose MODDED:
-   Enter player count [2-3]:
+   - Enter player count [2-3]:
 
 🧼 How It Works (Under the Hood)
 - LIVE:
@@ -56,5 +57,5 @@ ENV_SWITCH.ini
 
 🛠️ Troubleshooting
 - No console appears? Run the .ps1 file manually if needed.
-- Game won’t launch? Verify the path to nrsc_launcher.exe in ENV_SWITCH.ini
+- Game won’t launch? Verify the path to nrsc_launcher.exe in config.ini
 - Save not loading? Ensure .co2/.sl2 are valid and not corrupted.
