@@ -32,7 +32,8 @@ It automatically:
 
    Example:
    - GameDir=C:\Program Files (x86)\Steam\steamapps\common\ELDEN RING NIGHTREIGN\Game
-   - SteamID=76561198142145846
+   - SteamID=1234567890
+
 
 🚀 How to Use It
 1. Run Nightshift.exe
