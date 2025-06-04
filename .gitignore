@@ -1,2 +1,35 @@
-*.exe
-*.zip
+# dependencies
+node_modules/
+
+# production
+dist/
+out/
+build/
+
+# Electron cache
+*.asar
+*.unpacked/
+
+# logs and debugging
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.vscode/
+
+# system
+.DS_Store
+Thumbs.db
+
+# environment configs
+.env
+.env.*
+
+# compiled files
+*.tsbuildinfo
+
+# IDE and editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*.bak

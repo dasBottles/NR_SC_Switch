@@ -17,7 +17,7 @@ function Read-IniFile {
 }
 
 # Load configuration
-$Config = Read-IniFile ".\Nightshift\config.ini"
+$Config = Read-IniFile ".\config.ini"
 $GameDir = $Config["Paths"]["GameDir"]
 $SteamID = $Config["Paths"]["SteamID"]
 $SaveDir = Join-Path "$env:APPDATA\nightreign" $SteamID
