@@ -1,3 +1,4 @@
+# Read INI config
 function Read-IniFile {
     param ([string]$path)
     $ini = @{}
@@ -15,7 +16,7 @@ function Read-IniFile {
     return $ini
 }
 
-# Read INI config
+# Load configuration
 $Config = Read-IniFile ".\Nightshift\config.ini"
 $GameDir = $Config["Paths"]["GameDir"]
 $SteamID = $Config["Paths"]["SteamID"]
@@ -27,10 +28,10 @@ $SettingsPath = Join-Path $GameDir "SeamlessCoop\nrsc_settings.ini"
 
 $DllPath = Join-Path $GameDir "dinput8.dll"
 $DllDisabledPath = Join-Path $GameDir "dinput8.disabled"
-$SaveCo2 = Join-Path $SaveDir "NR0000.co2"
-$SaveCo2Bak = Join-Path $SaveDir "NR0000.co2.bak"
-$SaveSl2 = Join-Path $SaveDir "NR0000.sl2"
-$SaveSl2Bak = Join-Path $SaveDir "NR0000.sl2.bak"
+$SaveCo2     = Join-Path $SaveDir "NR0000.co2"
+$SaveCo2Bak  = Join-Path $SaveDir "NR0000.co2.bak"
+$SaveSl2     = Join-Path $SaveDir "NR0000.sl2"
+$SaveSl2Bak  = Join-Path $SaveDir "NR0000.sl2.bak"
 
 $currentEnv = if (Test-Path $DllPath) { "MODDED" } elseif (Test-Path $DllDisabledPath) { "LIVE" } else { "UNKNOWN" }
 
@@ -44,16 +45,19 @@ $choice = Read-Host "Enter your choice [1-2]"
 switch ($choice) {
     "1" {
         Write-Host "`n--- Switching to LIVE Environment ---"
-        if (Test-Path $SaveCo2) { Copy-Item $SaveCo2 $SaveSl2 -Force }
-        if (Test-Path $SaveCo2Bak) { Copy-Item $SaveCo2Bak $SaveSl2Bak -Force }
+        if ($currentEnv -ne "LIVE") {
+            if (Test-Path $SaveCo2) { Copy-Item $SaveCo2 $SaveSl2 -Force }
+            if (Test-Path $SaveCo2Bak) { Copy-Item $SaveCo2Bak $SaveSl2Bak -Force }
+        }
         if (Test-Path $DllPath) { Rename-Item -Path $DllPath -NewName "dinput8.disabled" -Force }
         Start-Process $LiveLauncher
     }
     "2" {
         Write-Host "`n--- Switching to MODDED Environment ---"
-        if (Test-Path $SaveSl2) { Copy-Item $SaveSl2 $SaveCo2 -Force }
-        if (Test-Path $SaveSl2Bak) { Copy-Item $SaveSl2Bak $SaveCo2Bak -Force }
-
+        if ($currentEnv -ne "MODDED") {
+            if (Test-Path $SaveSl2) { Copy-Item $SaveSl2 $SaveCo2 -Force }
+            if (Test-Path $SaveSl2Bak) { Copy-Item $SaveSl2Bak $SaveCo2Bak -Force }
+        }
         if (Test-Path $SettingsPath) {
             $playerCount = Read-Host "Enter player count [2-3]"
             (Get-Content $SettingsPath) |
@@ -65,7 +69,6 @@ switch ($choice) {
                     }
                 } | Set-Content $SettingsPath
         }
-
         if (Test-Path $DllDisabledPath) { Rename-Item -Path $DllDisabledPath -NewName "dinput8.dll" -Force }
         Start-Process -FilePath $ModdedLauncher -WorkingDirectory $GameDir
     }
