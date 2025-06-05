@@ -1,56 +1,62 @@
 // SettingsForm.jsx
 import React, { useState, useEffect } from 'react';
-import { Form, Button } from 'react-bootstrap';
+import styled from 'styled-components';
+
+const Form = styled.form`
+  display: flex;
+  flex-direction: column;
+`;
+
+const Label = styled.label`
+  font-size: 0.875rem;
+  color: #374151;
+  margin-bottom: 0.5rem;
+`;
+
+const Input = styled.input`
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+`;
+
+const SaveButton = styled.button`
+  background-color: #3b82f6;
+  color: white;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #2563eb;
+  }
+`;
 
 function SettingsForm() {
   const [steamID, setSteamID] = useState('');
-  const [gameDir, setGameDir] = useState('');
 
   useEffect(() => {
-    // Load settings from backend if available
-    window.api.readConfig().then(config => {
-      if (config) {
-        setSteamID(config.SteamID || '');
-        setGameDir(config.GameDir || '');
-      }
+    window.electronAPI.readConfig().then(config => {
+      if (config?.steamID) setSteamID(config.steamID);
     });
   }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    window.api.writeConfig({
-      SteamID: steamID,
-      GameDir: gameDir
-    });
+    window.electronAPI.writeConfig({ steamID });
   };
 
   return (
-    <div className="container mt-4">
-      <h2 className="mb-4">Settings</h2>
-      <Form onSubmit={handleSubmit}>
-        <Form.Group controlId="formSteamID" className="mb-3">
-          <Form.Label>Steam ID</Form.Label>
-          <Form.Control
-            type="text"
-            value={steamID}
-            onChange={(e) => setSteamID(e.target.value)}
-          />
-        </Form.Group>
-
-        <Form.Group controlId="formGameDir" className="mb-3">
-          <Form.Label>Game Directory</Form.Label>
-          <Form.Control
-            type="text"
-            value={gameDir}
-            onChange={(e) => setGameDir(e.target.value)}
-          />
-        </Form.Group>
-
-        <Button variant="primary" type="submit">
-          Save
-        </Button>
-      </Form>
-    </div>
+    <Form onSubmit={handleSubmit}>
+      <Label htmlFor="steamID">Steam ID</Label>
+      <Input
+        id="steamID"
+        value={steamID}
+        onChange={(e) => setSteamID(e.target.value)}
+      />
+      <SaveButton type="submit">Save</SaveButton>
+    </Form>
   );
 }
 

@@ -1,48 +1,117 @@
 // App.jsx
 import React, { useState } from 'react';
+import styled from 'styled-components';
 import SettingsForm from './components/SettingsForm';
-import './index.css';
+
+const Container = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f3f4f6;
+  color: #1f2937;
+`;
+
+const Wrapper = styled.div`
+  width: 100%;
+  max-width: 28rem;
+  padding: 1.5rem;
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+`;
+
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+`;
+
+const Title = styled.h4`
+  font-size: 1.25rem;
+  font-weight: 600;
+`;
+
+const SettingsButton = styled.button`
+  padding: 0.25rem 0.75rem;
+  border: 1px solid #9ca3af;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  &:hover {
+    background-color: #e5e7eb;
+  }
+`;
+
+const CenterText = styled.div`
+  text-align: center;
+`;
+
+const Heading = styled.h2`
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+`;
+
+const SubText = styled.p`
+  color: #4b5563;
+  margin-bottom: 1.5rem;
+`;
+
+const LaunchButton = styled.button`
+  padding: 0.5rem 1rem;
+  color: white;
+  font-weight: 500;
+  border-radius: 0.375rem;
+  transition: background-color 0.2s;
+  margin-bottom: 0.75rem;
+
+  &:first-of-type {
+    background-color: #2563eb;
+    &:hover {
+      background-color: #1d4ed8;
+    }
+  }
+
+  &:last-of-type {
+    background-color: #16a34a;
+    &:hover {
+      background-color: #15803d;
+    }
+  }
+`;
 
 function App() {
   const [showSettings, setShowSettings] = useState(false);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 text-gray-800">
-      <div className="w-full max-w-md p-6 bg-white rounded shadow-lg">
-        <div className="flex items-center justify-between mb-6">
-          <h4 className="text-xl font-semibold">NightShift</h4>
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="px-3 py-1 border border-gray-400 rounded text-sm hover:bg-gray-200"
-          >
+    <Container>
+      <Wrapper>
+        <Header>
+          <Title>NightShift</Title>
+          <SettingsButton onClick={() => setShowSettings(!showSettings)}>
             {showSettings ? 'Back' : 'Settings'}
-          </button>
-        </div>
+          </SettingsButton>
+        </Header>
 
         {showSettings ? (
           <SettingsForm />
         ) : (
-          <div className="text-center">
-            <h2 className="text-2xl font-bold mb-2">Welcome to NightShift</h2>
-            <p className="text-gray-600 mb-6">Choose an environment to launch</p>
-            <div className="flex flex-col gap-3">
-              <button
-                className="px-4 py-2 bg-blue-600 text-white font-medium rounded hover:bg-blue-700 transition"
-                onClick={() => window.electronAPI.launchEnv('Live')}
-              >
+          <CenterText>
+            <Heading>Welcome to NightShift</Heading>
+            <SubText>Choose an environment to launch</SubText>
+            <div className="d-flex flex-column align-items-center">
+              <LaunchButton onClick={() => window.electronAPI.launchEnv('Live')}>
                 Launch Live
-              </button>
-              <button
-                className="px-4 py-2 bg-green-600 text-white font-medium rounded hover:bg-green-700 transition"
-                onClick={() => window.electronAPI.launchEnv('Modded')}
-              >
+              </LaunchButton>
+              <LaunchButton onClick={() => window.electronAPI.launchEnv('Modded')}>
                 Launch Modded
-              </button>
+              </LaunchButton>
             </div>
-          </div>
+          </CenterText>
         )}
-      </div>
-    </div>
+      </Wrapper>
+    </Container>
   );
 }
 

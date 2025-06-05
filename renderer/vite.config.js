@@ -4,14 +4,13 @@ import tailwindcss from '@tailwindcss/vite'
 import path from 'path';
 
 export default defineConfig({
-  root: './',
   base: './',
   build: {
-    outDir: 'dist',
+    outDir: './dist',         // Output goes to root-level ./dist
     emptyOutDir: true,
   },
   plugins: [
-    react(), 
+    react(),
     tailwindcss(),
   ],
 });
