@@ -1,0 +1,36 @@
+{
+  "name": "nr_sc_switch",
+  "version": "1.0.0",
+  "description": "Elden Ring SeamlessCoop (Nightreign) Environment Switcher",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron .",
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dasBottles/NR_SC_Switch.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dasBottles/NR_SC_Switch/issues"
+  },
+  "homepage": "https://github.com/dasBottles/NR_SC_Switch#readme",
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.1.8",
+    "bootstrap": "^5.3.6",
+    "electron": "^36.4.0",
+    "ini": "^5.0.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.5.1",
+    "autoprefixer": "^10.4.21",
+    "vite": "^6.3.5"
+  }
+}
