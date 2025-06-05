@@ -1,32 +1,48 @@
-const { contextBridge } = require('electron');
+// preload.js
+const { contextBridge, ipcRenderer } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const ini = require('ini');
 
 const configPath = path.join(__dirname, 'assets', 'config.ini');
 
-console.log('✅ Preload script loaded');
-
 contextBridge.exposeInMainWorld('electronAPI', {
   readConfig: () => {
     try {
-      const config = ini.parse(fs.readFileSync(configPath, 'utf-8'));
-      console.log('📖 Read config from:', configPath);
-      return { path: configPath, config };
+      const raw = fs.readFileSync(configPath, 'utf-8');
+      const parsed = ini.parse(raw);
+      return { config: parsed, path: configPath };
     } catch (err) {
-      console.error('❌ Failed to read config:', err);
-      return { path: configPath, config: {} };
+      console.error('Failed to read config.ini:', err);
+      return { config: null, path: configPath };
     }
   },
 
-  writeConfig: (config, filePath) => {
+  updateConfig: (section, key, value) => {
     try {
-      fs.writeFileSync(filePath, ini.stringify(config));
-      console.log('💾 Wrote config to:', filePath);
+      const raw = fs.readFileSync(configPath, 'utf-8');
+      const parsed = ini.parse(raw);
+      parsed[section] = parsed[section] || {};
+      parsed[section][key] = value;
+      fs.writeFileSync(configPath, ini.stringify(parsed));
+      return true;
     } catch (err) {
-      console.error('❌ Failed to write config:', err);
+      console.error('Failed to update config.ini:', err);
+      return false;
     }
   },
 
-  getConfigPath: () => configPath
+  updateSteamId: (steamId) => {
+    try {
+      const raw = fs.readFileSync(configPath, 'utf-8');
+      const parsed = ini.parse(raw);
+      parsed.Paths = parsed.Paths || {};
+      parsed.Paths.SteamID = steamId;
+      fs.writeFileSync(configPath, ini.stringify(parsed));
+      return true;
+    } catch (err) {
+      console.error('Failed to update SteamID in config.ini:', err);
+      return false;
+    }
+  },
 });
