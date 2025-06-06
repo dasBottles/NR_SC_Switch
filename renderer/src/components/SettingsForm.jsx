@@ -5,19 +5,18 @@ import styled from 'styled-components';
 const Form = styled.form`
   display: flex;
   flex-direction: column;
+  gap: 1rem;
 `;
 
 const Label = styled.label`
   font-size: 0.875rem;
   color: #374151;
-  margin-bottom: 0.5rem;
 `;
 
 const Input = styled.input`
   padding: 0.5rem;
   border: 1px solid #d1d5db;
   border-radius: 0.375rem;
-  margin-bottom: 1rem;
 `;
 
 const SaveButton = styled.button`
@@ -33,7 +32,35 @@ const SaveButton = styled.button`
   }
 `;
 
-function SettingsForm() {
+const BackButton = styled.button`
+  background-color: transparent;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  align-self: flex-start;
+  margin-bottom: 1rem;
+`;
+
+const Container = styled.div`
+  background: white;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  margin: auto;
+`;
+
+const Title = styled.h2`
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #1f2937;
+`;
+
+function SettingsForm({ onClose }) {
   const [steamID, setSteamID] = useState('');
 
   useEffect(() => {
@@ -48,15 +75,19 @@ function SettingsForm() {
   };
 
   return (
-    <Form onSubmit={handleSubmit}>
-      <Label htmlFor="steamID">Steam ID</Label>
-      <Input
-        id="steamID"
-        value={steamID}
-        onChange={(e) => setSteamID(e.target.value)}
-      />
-      <SaveButton type="submit">Save</SaveButton>
-    </Form>
+    <Container>
+      <BackButton onClick={onClose}>← Back</BackButton>
+      <Title>Settings</Title>
+      <Form onSubmit={handleSubmit}>
+        <Label htmlFor="steamID">Steam ID</Label>
+        <Input
+          id="steamID"
+          value={steamID}
+          onChange={(e) => setSteamID(e.target.value)}
+        />
+        <SaveButton type="submit">Save</SaveButton>
+      </Form>
+    </Container>
   );
 }
 
