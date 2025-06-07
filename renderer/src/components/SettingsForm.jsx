@@ -1,94 +1,171 @@
-// SettingsForm.jsx
+// renderer/src/components/SettingsForm.jsx
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 
-const Form = styled.form`
+const Container = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  align-items: center;         /* center everything horizontally */
+  justify-content: center;     /* center vertically if you give it a height */
+  min-height: 100vh;           /* fill viewport vertically */
+  background: #f3f4f6;
+  padding: 2rem;
 `;
 
-const Label = styled.label`
-  font-size: 0.875rem;
-  color: #374151;
-`;
-
-const Input = styled.input`
-  padding: 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-`;
-
-const SaveButton = styled.button`
-  background-color: #3b82f6;
-  color: white;
-  font-weight: 500;
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background-color: #2563eb;
-  }
-`;
-
-const BackButton = styled.button`
-  background-color: transparent;
-  color: #374151;
-  border: 1px solid #d1d5db;
-  padding: 0.25rem 0.75rem;
-  font-size: 0.875rem;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  align-self: flex-start;
-  margin-bottom: 1rem;
-`;
-
-const Container = styled.div`
-  background: white;
+const Panel = styled.div`
+  background: #fff;
   padding: 2rem;
   border-radius: 0.5rem;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  width: 100%;
   max-width: 400px;
-  margin: auto;
+`;
+
+const Back = styled.button`
+  background: transparent;
+  border: 1px solid #d1d5db;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  margin-bottom: 1.5rem;
 `;
 
 const Title = styled.h2`
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 1rem;
+  margin: 0 0 1.5rem;
+  text-align: center;
   color: #1f2937;
 `;
 
-function SettingsForm({ onClose }) {
-  const [steamID, setSteamID] = useState('');
+const Form = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;                   /* bigger gap between field groups */
+`;
+
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;         /* center label+input+button */
+  text-align: center;
+`;
+
+const Label = styled.label`
+  font-size: 0.9rem;
+  color: #374151;
+  margin-bottom: 0.5rem;       /* space below the label */
+`;
+
+const Input = styled.input`
+  width: 100%;
+  max-width: 300px;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  margin-bottom: 0.75rem;      /* space below the input */
+`;
+
+const RadioGroup = styled.div`
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 0.75rem;
+`;
+
+const RadioLabel = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+`;
+
+const Button = styled.button`
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.375rem;
+  background: #3b82f6;
+  color: white;
+  cursor: pointer;
+  min-width: 140px;
+  &:hover {
+    background: #2563eb;
+  }
+`;
+
+const Status = styled.p`
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: ${props => (props.error ? 'tomato' : 'green')};
+  text-align: center;
+`;
+
+export default function SettingsForm({ onClose }) {
+  const [steamID, setSteamID]         = useState('');
+  const [playerCount, setPlayerCount] = useState('2');
+  const [status, setStatus]           = useState(null);
 
   useEffect(() => {
-    window.electronAPI.readConfig().then(config => {
-      if (config?.steamID) setSteamID(config.steamID);
-    });
+    window.electronAPI.readConfig()
+      .then(({ steamID }) => setSteamID(steamID))
+      .catch(console.error);
+    window.electronAPI.readNrscSettings()
+      .then(({ playerCount }) => setPlayerCount(playerCount))
+      .catch(console.error);
   }, []);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    window.electronAPI.writeConfig({ steamID });
+  const saveSteam = async () => {
+    await window.electronAPI.writeConfig({ steamID });
+    setStatus({ text: 'SteamID saved!', error: false });
+  };
+
+  const saveCount = async () => {
+    const res = await window.electronAPI.updatePlayerCount(playerCount);
+    if (res.success) {
+      setStatus({ text: 'Player count saved!', error: false });
+    } else {
+      setStatus({ text: `Error: ${res.error}`, error: true });
+    }
   };
 
   return (
     <Container>
-      <BackButton onClick={onClose}>← Back</BackButton>
-      <Title>Settings</Title>
-      <Form onSubmit={handleSubmit}>
-        <Label htmlFor="steamID">Steam ID</Label>
-        <Input
-          id="steamID"
-          value={steamID}
-          onChange={(e) => setSteamID(e.target.value)}
-        />
-        <SaveButton type="submit">Save</SaveButton>
-      </Form>
+      <Panel>
+        <Back onClick={onClose}>← Back</Back>
+        <Title>Settings</Title>
+        <Form>
+          <FormGroup>
+            <Label htmlFor="steamID">Steam ID</Label>
+            <Input
+              id="steamID"
+              value={steamID}
+              placeholder={steamID}
+              onChange={e => setSteamID(e.target.value)}
+            />
+            <Button onClick={saveSteam}>Save SteamID</Button>
+          </FormGroup>
+
+          <FormGroup>
+            <Label>Player Count</Label>
+            <RadioGroup>
+              {['2','3'].map(val => (
+                <RadioLabel key={val}>
+                  <input
+                    type="radio"
+                    name="playerCount"
+                    value={val}
+                    checked={playerCount===val}
+                    onChange={() => setPlayerCount(val)}
+                  />
+                  {val} Players
+                </RadioLabel>
+              ))}
+            </RadioGroup>
+            <Button onClick={saveCount}>Save Player Count</Button>
+          </FormGroup>
+        </Form>
+
+        {status && (
+          <Status error={status.error}>{status.text}</Status>
+        )}
+      </Panel>
     </Container>
   );
 }
-
-export default SettingsForm;

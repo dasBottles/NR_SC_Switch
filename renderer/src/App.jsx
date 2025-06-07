@@ -76,7 +76,7 @@ function App() {
 
   const handleLaunch = (env) => {
     console.log('Calling launchEnv with:', env);
-    window.electronAPI.launchEnv(env);
+    window.electronAPI.runEnvSwitch(env);
   };
 
   return (

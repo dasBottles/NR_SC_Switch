@@ -44,7 +44,7 @@ function createWindow() {
     }
   });
 
-  win.loadFile(path.join(__dirname, 'renderer', 'dist', 'index.html'));
+    win.loadFile(path.join(__dirname, 'renderer', 'dist', 'index.html'));
 }
 
 app.whenReady().then(() => {
@@ -58,62 +58,85 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
-// IPC handlers using configState
+// read/write your config.ini (SteamID / GameDir)
 ipcMain.handle('read-config', async () => {
-  return configState;
+  const cfg = ini.parse(fs.readFileSync(path.join(__dirname,'assets','config.ini'),'utf-8'));
+  return {
+    steamID: cfg.Paths?.SteamID || '',
+    gameDir: cfg.Paths?.GameDir || ''
+  };
+});
+ipcMain.handle('write-config', async (_evt, { steamID }) => {
+  const cfgPath = path.join(__dirname,'assets','config.ini');
+  const raw     = fs.readFileSync(cfgPath,'utf-8');
+  const cfg     = ini.parse(raw);
+  cfg.Paths = cfg.Paths || {};
+  cfg.Paths.SteamID = steamID;
+  fs.writeFileSync(cfgPath, ini.stringify(cfg), 'utf-8');
+  return { success: true };
 });
 
-ipcMain.handle('write-config', async (_event, data) => {
-  // Merge updates into state
-  configState.Paths = configState.Paths || {};
-  if (data.steamID !== undefined) configState.Paths.SteamID = data.steamID;
-  if (data.gameDir !== undefined) configState.Paths.GameDir = data.gameDir;
-  // Optionally update Launchers if provided
-  configState.Launchers = configState.Launchers || {};
-  if (data.liveLauncher !== undefined)   configState.Launchers.LiveLauncher   = data.liveLauncher;
-  if (data.moddedLauncher !== undefined) configState.Launchers.ModdedLauncher = data.moddedLauncher;
-
-  // Write back to disk
+// read/write the player_count in SeamlessCoop/nrsc_settings.ini
+ipcMain.handle('read-nrsc-settings', async () => {
+  const cfg    = ini.parse(fs.readFileSync(path.join(__dirname,'assets','config.ini'),'utf-8'));
+  const gameDir = cfg.Paths?.GameDir||'';
+  const iniPath = path.join(gameDir,'SeamlessCoop','nrsc_settings.ini');
   try {
-    fs.writeFileSync(CONFIG_PATH, ini.stringify(configState), 'utf-8');
-    console.log('💾 Config saved:', configState);
-    return { success: true };
-  } catch (err) {
-    console.error('❌ Failed to write config:', err);
-    return { success: false, error: err.message };
+    const raw  = fs.readFileSync(iniPath,'utf-8');
+    const nrsc = ini.parse(raw);
+    return { playerCount: nrsc.GAMEPLAY?.player_count || '2' };
+  } catch (e) {
+    console.error('read-nrsc-settings failed:', e);
+    return { playerCount: '2' };
   }
 });
 
-ipcMain.handle('run-env-switch', async (_event, env) => {
-  // env arrives raw, use directly
-  const steamID = configState.Paths?.SteamID || '';
-  const gameDir = configState.Paths?.GameDir  || '';
+ipcMain.handle('update-player-count', async (_evt, count) => {
+  const cfg    = ini.parse(fs.readFileSync(path.join(__dirname,'assets','config.ini'),'utf-8'));
+  const gameDir = cfg.Paths?.GameDir||'';
+  const iniPath = path.join(gameDir,'SeamlessCoop','nrsc_settings.ini');
+  try {
+    const raw   = fs.readFileSync(iniPath,'utf-8');
+    const nrsc  = ini.parse(raw);
+    nrsc.GAMEPLAY = nrsc.GAMEPLAY || {};
+    nrsc.GAMEPLAY.player_count = count;
+    fs.writeFileSync(iniPath, ini.stringify(nrsc), 'utf-8');
+    return { success: true };
+  } catch (e) {
+    console.error('update-player-count failed:', e);
+    return { success: false, error: e.message };
+  }
+});
 
-  // Log state anytime before launch
-  console.log('🚀 Launching environment:', env);
-  console.log('🔑 SteamID:', steamID);
-  console.log('🎮 GameDir:', gameDir);
+ipcMain.handle('run-env-switch', async (_evt, env) => {
+  // read config.ini
+  const cfgRaw = fs.readFileSync(path.join(__dirname,'assets','config.ini'),'utf-8');
+  const cfg    = ini.parse(cfgRaw);
+  const steamID = cfg.Paths?.SteamID  || '';
+  const gameDir = cfg.Paths?.GameDir  || '';
 
-  // Build PowerShell command
-  const psScript = path.join(__dirname, 'scripts', 'NightShift.ps1');
-  const args = [
-    '-NoProfile',
-    '-NonInteractive',
-    '-ExecutionPolicy', 'Bypass',
+  console.log(`[ELECTRON] Launching environment: ${env}`);
+  console.log(`[ELECTRON] SteamID: ${steamID}`);
+  console.log(`[ELECTRON] GameDir: ${gameDir}`);
+
+  const psScript = path.join(__dirname,'scripts','NightShift.ps1');
+  const psArgs   = [
+    '-NoProfile', '-NonInteractive',
+    '-ExecutionPolicy','Bypass',
     '-File', psScript,
-    env,
+    env,       // "Live" or "Modded" exactly as you passed in
     steamID,
     gameDir
   ];
 
-  return new Promise((resolve) => {
-    execFile('powershell.exe', args, (err, stdout, stderr) => {
+  return new Promise(resolve => {
+    execFile('powershell.exe', psArgs, (err, stdout, stderr) => {
       if (err) {
-        console.error('❌ PowerShell error:', stderr);
-        resolve({ success: false, error: stderr });
+        console.error('[ELECTRON] PowerShell error:', stderr);
+        resolve(`PowerShell failed: ${stderr}`);
       } else {
-        console.log('✅ PowerShell stdout:', stdout);
-        resolve({ success: true, output: stdout });
+        console.log('[ELECTRON] PowerShell stdout:', stdout);
+        resolve(`Launched ${env}`);
       }
     });
   });
