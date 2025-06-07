@@ -1,10 +1,11 @@
+<<<<<<< HEAD
 Elden Ring SeamlessCoop (NightReign) Environment Switcher
 =========================================================
 
 A simple Windows desktop app for toggling between **Live** (vanilla) and **Modded** (SeamlessCoop) environments in Elden Ring NightReign.  
 No more manual file juggling—just click a button.
 
-![App Screenshot](assets/screenshot.png)  
+![App Screenshot](assets/NightShift_FMHM4hDwgf.png)  
 
 Features
 --------

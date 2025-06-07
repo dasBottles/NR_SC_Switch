@@ -132,27 +132,6 @@ ipcMain.handle('update-player-count', async (_evt, count) => {
   }
 });
 
-// ipcMain.handle('run-env-switch', async (_evt, env) => {
-//   // read config.ini
-//   const cfgRaw = fs.readFileSync(path.join(__dirname,'assets','config.ini'),'utf-8');
-//   const cfg    = ini.parse(cfgRaw);
-//   const steamID = cfg.Paths?.SteamID  || '';
-//   const gameDir = cfg.Paths?.GameDir  || '';
-
-//   console.log(`[ELECTRON] Launching environment: ${env}`);
-//   console.log(`[ELECTRON] SteamID: ${steamID}`);
-//   console.log(`[ELECTRON] GameDir: ${gameDir}`);
-
-//   const psScript = path.join(__dirname,'scripts','NightShift.ps1');
-//   const psArgs   = [
-//     '-NoProfile', '-NonInteractive',
-//     '-ExecutionPolicy','Bypass',
-//     '-File', psScript,
-//     env,       // "Live" or "Modded" exactly as you passed in
-//     steamID,
-//     gameDir
-//   ];
-
 function getScriptPath() {
   if (app.isPackaged) {
     return path.join(process.resourcesPath, 'app.asar.unpacked', 'scripts', 'NightShift.ps1');

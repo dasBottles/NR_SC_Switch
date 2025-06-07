@@ -1,6 +1,6 @@
 {
   "name": "nightshift",
-  "version": "1.0.0",
+  "version": "1.1b",
   "description": "Elden Ring NightReign environment switcher",
   "main": "main.js",
   "scripts": {

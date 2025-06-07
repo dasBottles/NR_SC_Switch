@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Logs
 logs
 *.log
@@ -23,3 +24,6 @@ release
 *.njsproj
 *.sln
 *.sw?
+=======
+*.exe
+>>>>>>> origin/master
