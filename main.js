@@ -1,5 +1,5 @@
 // main.js
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const ini = require('ini');
@@ -29,6 +29,7 @@ loadConfig();
 fs.watchFile(CONFIG_PATH, () => {
   console.log('📁 config.ini changed, reloading state...');
   loadConfig();
+  
 });
 
 function createWindow() {
@@ -44,8 +45,8 @@ function createWindow() {
       sandbox: false
     }
   });
-
-    win.loadFile(path.join(__dirname, 'renderer', 'dist', 'index.html'));
+  
+  win.loadFile(path.join(__dirname, 'renderer', 'dist', 'index.html'));
 }
 
 app.whenReady().then(() => {
@@ -154,38 +155,55 @@ ipcMain.handle('update-player-count', async (_evt, count) => {
 
 function getScriptPath() {
   if (app.isPackaged) {
-    return path.join(process.resourcesPath,
-                     'app.asar.unpacked',
-                     'scripts',
-                     'NightShift.ps1');
+    return path.join(process.resourcesPath, 'app.asar.unpacked', 'scripts', 'NightShift.ps1');
   } else {
     return path.join(__dirname, 'scripts', 'NightShift.ps1');
   }
 }
 
-ipcMain.handle('run-env-switch', async (_e, env) => {
-  const psPath = getScriptPath();
-  console.log('🔍 Running PS script from:', psPath);
-  console.log('🔔 main.run-env-switch got env:', env);
+ipcMain.handle('run-env-switch', async (_evt, env) => {
+  // 1) Load your *writable* config.ini from userData (or assets)
+  const cfgPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'app.asar.unpacked', 'assets', 'config.ini')
+    : path.join(__dirname, 'assets', 'config.ini');
+  const cfg     = ini.parse(fs.readFileSync(cfgPath, 'utf-8'));
+
+  // 2) Destructure SteamID + GameDir out of your [Paths] section
+  const steamID = cfg.Paths?.SteamID  || '';
+  const gameDir = cfg.Paths?.GameDir  || '';
+
+  // 3) Build the full PS script path
+  const scriptPath = getScriptPath();
+  console.log('🔔 run-env-switch:', { env, steamID, gameDir, scriptPath });
+
+  // 4) Invoke PowerShell *with all three* parameters
+  const psArgs = [
+    '-NoProfile',
+    '-NonInteractive',
+    '-ExecutionPolicy', 'Bypass',
+    '-File', scriptPath,
+    env,        // $Environment
+    steamID,    // $SteamID
+    gameDir     // $GameDir
+  ];
+
   return new Promise(resolve => {
-    execFile('powershell.exe',
-      ['-NoProfile', '-ExecutionPolicy','Bypass','-File', psPath, env],
-      (err, stdout, stderr) => {
-      console.log('🔔 PowerShell stdout:', stdout);
-      console.error('🔔 PowerShell stderr:', stderr);
-      });
+    execFile('powershell.exe', psArgs, (err, stdout, stderr) => {
+      console.log('🔔 PS stdout:', stdout);
+      console.error('🔔 PS stderr:', stderr);
+      if (err) {
+        resolve(`❌ Error: ${err.message}`);
+      } else {
+        // 5) After PS completes, launch the game
+        if (env.toLowerCase() === 'live') {
+          const url = cfg.Launchers?.LiveLauncher;
+          if (url?.startsWith('steam://')) shell.openExternal(url);
+        } else {
+          const exe = path.join(gameDir, cfg.Launchers?.ModdedLauncher || '');
+          execFile(exe, { cwd: gameDir }, () => {});
+        }
+        resolve(`✅ Launched ${env}`);
+      }
+    });
   });
 });
-
-//   return new Promise(resolve => {
-//     execFile('powershell.exe', psArgs, (err, stdout, stderr) => {
-//       if (err) {
-//         console.error('[ELECTRON] PowerShell error:', stderr);
-//         resolve(`PowerShell failed: ${stderr}`);
-//       } else {
-//         console.log('[ELECTRON] PowerShell stdout:', stdout);
-//         resolve(`Launched ${env}`);
-//       }
-//     });
-//   });
-// });
