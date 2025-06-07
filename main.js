@@ -1,36 +1,32 @@
 // main.js
 const { app, BrowserWindow, ipcMain, shell } = require('electron');
-const path = require('path');
-const fs = require('fs');
-const ini = require('ini');
+const path    = require('path');
+const fs      = require('fs');
+const ini     = require('ini');
 const { execFile } = require('child_process');
 
-// Path to config.ini
-const CONFIG_PATH = path.join(__dirname, 'assets', 'config.ini');
-const userConfigPath = path.join(app.getPath('userData'), 'config.ini');
+// 1) Bundled default lives in your asar at ./assets/config.ini
+const DEFAULT_CONFIG = path.join(__dirname, 'assets', 'config.ini');
+// 2) Writable copy lives in %APPDATA%/NightShift/config.ini
+const USER_CONFIG_DIR  = path.join(app.getPath('userData'));
+const USER_CONFIG_PATH = path.join(USER_CONFIG_DIR, 'config.ini');
 
-// Load and store config as state
-let configState = {};
-function loadConfig() {
-  try {
-    const raw = fs.readFileSync(CONFIG_PATH, 'utf-8');
-    configState = ini.parse(raw);
-    console.log('🔄 Config loaded:', configState);
-  } catch (err) {
-    console.warn('⚠️ Failed to load config:', err.message);
-    configState = {};
-  }
+// Ensure userData/config.ini exists
+if (!fs.existsSync(USER_CONFIG_PATH)) {
+  fs.mkdirSync(USER_CONFIG_DIR, { recursive: true });
+  fs.copyFileSync(DEFAULT_CONFIG, USER_CONFIG_PATH);
+  console.log('📄 Copied default config →', USER_CONFIG_PATH);
 }
 
-// Initial load
-loadConfig();
-
-// Watch for external changes to config.ini and reload state (optional)
-fs.watchFile(CONFIG_PATH, () => {
-  console.log('📁 config.ini changed, reloading state...');
-  loadConfig();
-  
-});
+// Helper: load that one writable config
+function loadUserConfig() {
+  try {
+    return ini.parse(fs.readFileSync(USER_CONFIG_PATH, 'utf-8'));
+  } catch (e) {
+    console.error('❌ Failed to load user config:', e);
+    return {};
+  }
+}
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -45,125 +41,99 @@ function createWindow() {
       sandbox: false
     }
   });
-  
   win.loadFile(path.join(__dirname, 'renderer', 'dist', 'index.html'));
 }
 
-app.whenReady().then(() => {
-  if (!fs.existsSync(userConfigPath)) {
-    fs.mkdirSync(path.dirname(userConfigPath), { recursive: true });
-    fs.copyFileSync(CONFIG_PATH, userConfigPath);
-    console.log('📄 Default config copied to userData:', userConfigPath);
-  }
-  createWindow();
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
-});
+app.whenReady().then(createWindow);
+app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
-});
 
-// Read config.ini from userData
+// ─── IPC: CONFIG CRUD ───────────────────────────────────────────────────────────
+
+// Read SteamID & GameDir
 ipcMain.handle('read-config', async () => {
-  try {
-    const raw    = fs.readFileSync(userConfigPath, 'utf-8');
-    const parsed = ini.parse(raw);
-    return {
-      steamID: parsed.Paths?.SteamID || '',
-      gameDir: parsed.Paths?.GameDir  || ''
-    };
-  } catch (err) {
-    console.error('read-config failed:', err);
-    return { steamID: '', gameDir: '' };
-  }
+  const cfg = loadUserConfig();
+  return {
+    steamID: cfg.Paths?.SteamID || '',
+    gameDir: cfg.Paths?.GameDir  || ''
+  };
 });
 
-// Write only the SteamID back to the userData config
-ipcMain.handle('write-config', async (_evt, { steamID }) => {
+// Write only SteamID back
+ipcMain.handle('write-config', async (_e, { steamID }) => {
   try {
-    const raw    = fs.readFileSync(userConfigPath, 'utf-8');
-    const parsed = ini.parse(raw);
-    parsed.Paths = parsed.Paths || {};
-    parsed.Paths.SteamID = steamID;
-    fs.writeFileSync(userConfigPath, ini.stringify(parsed), 'utf-8');
+    const cfg = loadUserConfig();
+    cfg.Paths = cfg.Paths || {};
+    cfg.Paths.SteamID = steamID;
+    fs.writeFileSync(USER_CONFIG_PATH, ini.stringify(cfg), 'utf-8');
     return { success: true };
   } catch (err) {
-    console.error('write-config failed:', err);
+    console.error('❌ write-config failed:', err);
     return { success: false, error: err.message };
   }
 });
-// read/write the player_count in SeamlessCoop/nrsc_settings.ini
+
+
+// ─── IPC: NRSC SETTINGS ────────────────────────────────────────────────────────
+
+// Read player_count
 ipcMain.handle('read-nrsc-settings', async () => {
-  const cfg    = ini.parse(fs.readFileSync(path.join(__dirname,'assets','config.ini'),'utf-8'));
-  const gameDir = cfg.Paths?.GameDir||'';
-  const iniPath = path.join(gameDir,'SeamlessCoop','nrsc_settings.ini');
+  const cfg = loadUserConfig();
+  const gameDir = cfg.Paths?.GameDir || '';
+  const nrscIni = path.join(gameDir, 'SeamlessCoop', 'nrsc_settings.ini');
   try {
-    const raw  = fs.readFileSync(iniPath,'utf-8');
-    const nrsc = ini.parse(raw);
-    return { playerCount: nrsc.GAMEPLAY?.player_count || '2' };
-  } catch (e) {
-    console.error('read-nrsc-settings failed:', e);
+    const raw  = fs.readFileSync(nrscIni, 'utf-8');
+    const o    = ini.parse(raw);
+    return { playerCount: o.GAMEPLAY?.player_count || '2' };
+  } catch (err) {
+    console.error('❌ read-nrsc-settings failed:', err);
     return { playerCount: '2' };
   }
 });
 
-ipcMain.handle('update-player-count', async (_evt, count) => {
-  const cfg     = ini.parse(fs.readFileSync(userConfigPath,'utf-8'));
+// Update player_count
+ipcMain.handle('update-player-count', async (_e, newCount) => {
+  const cfg = loadUserConfig();
   const gameDir = cfg.Paths?.GameDir || '';
-  const settingsPath = path.join(gameDir, 'SeamlessCoop', 'nrsc_settings.ini');
-
+  const nrscIni = path.join(gameDir, 'SeamlessCoop', 'nrsc_settings.ini');
   try {
-    const lines = fs.readFileSync(settingsPath, 'utf-8').split(/\r?\n/);
-    const out = lines.map(line => {
-      if (line.match(/^\s*player_count\s*=/)) {
-        return `player_count = ${count}`;
-      }
-      return line;
-    }).join('\r\n');
-
-    fs.writeFileSync(settingsPath, out, 'utf-8');
-    
+    const raw  = fs.readFileSync(nrscIni, 'utf-8')
+                     .split(/\r?\n/)
+                     .map(line => line.replace(
+                       /^\s*player_count\s*=\s*\d+/,
+                       `player_count = ${newCount}`
+                     ))
+                     .join('\r\n');
+    fs.writeFileSync(nrscIni, raw, 'utf-8');
     return { success: true };
   } catch (err) {
-    console.error('update-player-count failed:', err);
+    console.error('❌ update-player-count failed:', err);
     return { success: false, error: err.message };
   }
 });
 
-function getScriptPath() {
-  if (app.isPackaged) {
-    return path.join(process.resourcesPath, 'app.asar.unpacked', 'scripts', 'NightShift.ps1');
-  } else {
-    return path.join(__dirname, 'scripts', 'NightShift.ps1');
-  }
+
+// ─── IPC: ENV SWITCH / LAUNCH ──────────────────────────────────────────────────
+
+function getPSScriptPath() {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, 'app.asar.unpacked', 'scripts', 'NightShift.ps1')
+    : path.join(__dirname, 'scripts', 'NightShift.ps1');
 }
 
-ipcMain.handle('run-env-switch', async (_evt, env) => {
-  // 1) Load your *writable* config.ini from userData (or assets)
-  const cfgPath = app.isPackaged
-    ? path.join(process.resourcesPath, 'app.asar.unpacked', 'assets', 'config.ini')
-    : path.join(__dirname, 'assets', 'config.ini');
-  const cfg     = ini.parse(fs.readFileSync(cfgPath, 'utf-8'));
-
-  // 2) Destructure SteamID + GameDir out of your [Paths] section
-  const steamID = cfg.Paths?.SteamID  || '';
+ipcMain.handle('run-env-switch', async (_e, env) => {
+  const cfg = loadUserConfig();
+  const steamID = cfg.Paths?.SteamID || '';
   const gameDir = cfg.Paths?.GameDir  || '';
+  const script  = getPSScriptPath();
+  console.log('🔔 run-env-switch:', { env, steamID, gameDir, script });
 
-  // 3) Build the full PS script path
-  const scriptPath = getScriptPath();
-  console.log('🔔 run-env-switch:', { env, steamID, gameDir, scriptPath });
-
-  // 4) Invoke PowerShell *with all three* parameters
   const psArgs = [
     '-NoProfile',
     '-NonInteractive',
     '-ExecutionPolicy', 'Bypass',
-    '-File', scriptPath,
-    env,        // $Environment
-    steamID,    // $SteamID
-    gameDir     // $GameDir
+    '-File', script,
+    env, steamID, gameDir
   ];
 
   return new Promise(resolve => {
@@ -172,17 +142,16 @@ ipcMain.handle('run-env-switch', async (_evt, env) => {
       console.error('🔔 PS stderr:', stderr);
       if (err) {
         resolve(`❌ Error: ${err.message}`);
-      } else {
-        // 5) After PS completes, launch the game
-        if (env.toLowerCase() === 'live') {
-          const url = cfg.Launchers?.LiveLauncher;
-          if (url?.startsWith('steam://')) shell.openExternal(url);
-        } else {
-          const exe = path.join(gameDir, cfg.Launchers?.ModdedLauncher || '');
-          execFile(exe, { cwd: gameDir }, () => {});
-        }
-        resolve(`✅ Launched ${env}`);
+        return;
       }
+      // launch
+      if (env.toLowerCase() === 'live') {
+        shell.openExternal(cfg.Launchers?.LiveLauncher);
+      } else {
+        const exe = path.join(gameDir, cfg.Launchers?.ModdedLauncher || '');
+        execFile(exe, { cwd: gameDir }, () => {});
+      }
+      resolve(`✅ Launched ${env}`);
     });
   });
 });
