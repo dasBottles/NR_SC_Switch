@@ -1,38 +1,47 @@
 {
-  "name": "nr_sc_switch",
+  "name": "nightshift",
   "version": "1.0.0",
+  "description": "Elden Ring NightReign environment switcher",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev:renderer": "cross-env NODE_ENV=development vite --config renderer/vite.config.js",
-    "dev:electron": "wait-on tcp:5173 && electron .",
-    "dev": "concurrently -k -n RENDERER,ELECTRON -c blue,green \"npm:dev:renderer\" \"npm:dev:electron\"",
-    "start": "electron ."
+    "dev": "cd renderer && npm run dev & electron .",
+    "start": "electron .",
+    "dist": "cd renderer && npm run build && cd .. && electron-builder"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/dasBottles/NR_SC_Switch.git"
+  "build": {
+    "appId": "com.yourname.Nightshift",
+    "productName": "NightShift",
+    "directories": {
+      "output": "release"
+    },
+    "asarUnpack": [
+      "scripts/**/*"
+    ],
+    "files": [
+      "main.js",
+      "preload.js",
+      "scripts/**/*",
+      "assets/**/*",
+      "renderer/dist/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "portable",
+        "zip"
+      ],
+      "icon": "assets/icon.ico"
+    }
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/dasBottles/NR_SC_Switch/issues"
-  },
-  "homepage": "https://github.com/dasBottles/NR_SC_Switch#readme",
-  "description": "",
   "dependencies": {
-    "@tailwindcss/vite": "^4.1.8",
-    "bootstrap": "^5.3.6",
-    "electron": "^36.4.0",
     "ini": "^5.0.0",
-    "react-bootstrap": "^2.10.10",
     "styled-components": "^6.1.18"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.8",
     "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",
+    "electron": "^36.4.0",
+    "electron-builder": "^26.0.12",
     "wait-on": "^8.0.3"
   }
 }

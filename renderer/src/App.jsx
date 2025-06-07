@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import SettingsForm from './components/SettingsForm';
 
+
 const Container = styled.div`
   height: 100vh;
   display: flex;
@@ -73,12 +74,20 @@ const LaunchButton = styled.button`
 
 function App() {
   const [showSettings, setShowSettings] = useState(false);
-
-  const handleLaunch = (env) => {
-    console.log('Calling launchEnv with:', env);
-    window.electronAPI.runEnvSwitch(env);
+  console.log('🔌 electronAPI =', window.electronAPI);
+const handleLaunch = async (env) => {
+    console.log('Calling handleLaunch with:', env);
+    // setStatus(`Launching ${env}…`);
+    try {
+      // if you aliased it in preload to handleLaunch:
+      const result = await window.electronAPI.handleLaunch(env);
+      console.log('↩️ got result:', result);
+      // setStatus(result);
+    } catch (err) {
+      console.error('💥 handleLaunch error:', err);
+      // setStatus(`Error: ${err.message}`);
+    }
   };
-
   return (
     <Container>
       <Card>
