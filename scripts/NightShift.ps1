@@ -1,5 +1,6 @@
 param(
-  [Parameter(Mandatory=$true)][ValidateSet("live","modded")]
+  [Parameter(Mandatory=$true)]
+  [ValidateSet("live","modded")]
   [string]$Environment,
 
   [Parameter(Mandatory=$true)]
@@ -9,44 +10,68 @@ param(
   [string]$GameDir
 )
 
-# build some paths once
-$SaveDir        = Join-Path $env:APPDATA "NightReign\$SteamID"
-$DllPath        = Join-Path $GameDir "dinput8.dll"
-$DllDisabled    = Join-Path $GameDir "dinput8.disabled"
-$LiveLauncher   = "steam://rungameid/2622380"    # or read from ini if you like
-$ModLauncherExe = Join-Path $GameDir "nrsc_launcher.exe"
+# Paths
+$SaveDir       = Join-Path $env:APPDATA "NightReign\$SteamID"
+$DllPath       = Join-Path $GameDir "dinput8.dll"
+$DllDisabled   = Join-Path $GameDir "dinput8.disabled"
+$LiveLauncher  = "steam://rungameid/2622380"
+$ModLauncher   = Join-Path $GameDir "nrsc_launcher.exe"
 
-Write-Host "[PS DEBUG] env=$Environment, SteamID=$SteamID, GameDir=$GameDir"
-Write-Host "`n=== Switching to $($Environment.ToUpper()) environment ===`n"
+# Determine current environment
+if (Test-Path $DllDisabled) {
+    $CurrentEnv = "live"
+}
+elseif (Test-Path $DllPath) {
+    $CurrentEnv = "modded"
+}
+else {
+    Write-Warning "Could not detect current env (no dinput8.dll or dinput8.disabled). Assuming 'live'."
+    $CurrentEnv = "live"
+}
 
-switch ($Environment.ToLower()) {
+Write-Host "[DEBUG] CurrentEnv = $CurrentEnv ; RequestedEnv = $Environment`n"
 
-  "live" {
-    # backup & convert .co2 -> .sl2
-    if (Test-Path "$SaveDir\NR0000.co2") {
-      Copy-Item "$SaveDir\NR0000.co2" "$SaveDir\NR0000.sl2" -Force
+# Only swap saves & DLL if we’re changing environments
+if ($CurrentEnv -ne $Environment) {
+
+    Write-Host "=== Switching to $($Environment.ToUpper()) environment ==="
+
+    switch ($Environment) {
+
+      "live" {
+        # Modded→Live: .co2 → .sl2, disable DLL
+        if (Test-Path "$SaveDir\NR0000.co2") {
+          Copy-Item "$SaveDir\NR0000.co2" "$SaveDir\NR0000.sl2" -Force
+          Write-Host "  Backed up and converted .co2 → .sl2"
+        }
+        if (Test-Path $DllPath) {
+          Rename-Item $DllPath "dinput8.disabled" -Force
+          Write-Host "  Renamed dinput8.dll → dinput8.disabled"
+        }
+      }
+
+      "modded" {
+        # Live→Modded: .sl2 → .co2, enable DLL
+        if (Test-Path "$SaveDir\NR0000.sl2") {
+          Copy-Item "$SaveDir\NR0000.sl2" "$SaveDir\NR0000.co2" -Force
+          Write-Host "  Backed up and converted .sl2 → .co2"
+        }
+        if (Test-Path $DllDisabled) {
+          Rename-Item $DllDisabled "dinput8.dll" -Force
+          Write-Host "  Renamed dinput8.disabled → dinput8.dll"
+        }
+      }
+
     }
-    # ensure dll is disabled
-    if (Test-Path $DllPath) {
-      Rename-Item $DllPath "dinput8.disabled" -Force
-    }
+
+} else {
+    Write-Host "=== Already in $($Environment.ToUpper()) environment; skipping conversion ==="
+}
+
+# Finally, launch
+Write-Host "`n=== Launching $($Environment.ToUpper()) ==="
+if ($Environment -eq "live") {
     Start-Process $LiveLauncher
-  }
-
-  "modded" {
-    # backup & convert .sl2 -> .co2
-    if (Test-Path "$SaveDir\NR0000.sl2") {
-      Copy-Item "$SaveDir\NR0000.sl2" "$SaveDir\NR0000.co2" -Force
-    }
-    # swap dll back in
-    if (Test-Path $DllDisabled) {
-      Rename-Item $DllDisabled "dinput8.dll" -Force
-    }
-    Start-Process -FilePath $ModLauncherExe -WorkingDirectory $GameDir
-  }
-
-  default {
-    Write-Error "Unknown environment '$Environment'. Use 'live' or 'modded'."
-    exit 1
-  }
+} else {
+    Start-Process -FilePath $ModLauncher -WorkingDirectory $GameDir
 }
