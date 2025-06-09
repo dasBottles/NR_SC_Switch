@@ -65,6 +65,10 @@ ipcMain.handle('write-config', async (_e, { steamID }) => {
     const cfg = loadUserConfig();
     cfg.Paths = cfg.Paths || {};
     cfg.Paths.SteamID = steamID;
+    cfg.Paths.GameDir  = gameDir;
+    cfg.Launchers = cfg.Launchers || {};
+    cfg.Launchers.LiveLauncher   = liveLauncher;
+    cfg.Launchers.ModdedLauncher = moddedLauncher;
     fs.writeFileSync(USER_CONFIG_PATH, ini.stringify(cfg), 'utf-8');
     return { success: true };
   } catch (err) {
