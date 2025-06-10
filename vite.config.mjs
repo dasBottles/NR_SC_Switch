@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   // Project root (where index.html lives)
@@ -34,5 +35,10 @@ export default defineConfig({
   plugins: [
     // enable React Fast Refresh, JSX, etc.
     react(),
-  ]
+    tailwindcss(),
+  ],
+
+  css: {
+    postcss: {},
+  }
 });

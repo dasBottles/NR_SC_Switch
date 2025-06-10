@@ -1,56 +1,5 @@
 // renderer/src/SettingsForm.jsx
 import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-
-const Panel = styled.div`
-  background: #fff;
-  padding: 2rem;
-  border-radius: .5rem;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-  max-width: 500px;
-  margin: 2rem auto;
-`;
-const Back = styled.button`
-  background: transparent;
-  border: none;
-  color: #555;
-  cursor: pointer;
-  font-size: .9rem;
-  margin-bottom: 1rem;
-`;
-const Title = styled.h2`
-  margin: 0 0 1rem;
-  color: #333;
-`;
-const FormGroup = styled.form`
-  display: flex;
-  flex-direction: column;
-  gap: .5rem;
-  margin-bottom: 1.5rem;
-`;
-const Label = styled.label`
-  font-size: .9rem;
-  color: #444;
-`;
-const Input = styled.input`
-  padding: .5rem;
-  border: 1px solid #ccc;
-  border-radius: .25rem;
-`;
-const Button = styled.button`
-  align-self: flex-start;
-  padding: .5rem 1rem;
-  background: #0078d4;
-  color: #fff;
-  border: none;
-  border-radius: .25rem;
-  cursor: pointer;
-  &:hover { background: #005a9e; }
-`;
-const Status = styled.p`
-  margin-top: 1rem;
-  color: ${p => (p.error ? 'tomato' : 'green')};
-`;
 
 export default function SettingsForm({ onClose }) {
   const [steamID, setSteamID]               = useState('');
@@ -104,48 +53,95 @@ export default function SettingsForm({ onClose }) {
     );
   };
 
-  return (
-    <Panel>
-      <Back onClick={onClose}>← Back</Back>
-      <Title>Settings</Title>
+ return (
+    <form className="space-y-6" onSubmit={savePaths}>
+      <button
+        type="button"
+        className="text-gray-600 hover:text-gray-800"
+        onClick={onClose}
+      >
+        ← Back
+      </button>
 
-      <FormGroup onSubmit={savePaths}>
-        <Label>Steam ID</Label>
-        <Input value={steamID} onChange={e=>setSteamID(e.target.value)} />
+      <h2 className="text-xl font-bold">Settings</h2>
 
-        <Label>Game Directory</Label>
-        <Input value={gameDir} onChange={e=>setGameDir(e.target.value)} />
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Steam ID</label>
+        <input
+          type="text"
+          value={steamID}
+          onChange={e => setSteamID(e.target.value)}
+          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+        />
+      </div>
 
-        <Label>Live Launcher (Steam URL)</Label>
-        <Input value={liveLauncher} onChange={e=>setLiveLauncher(e.target.value)} />
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Game Directory</label>
+        <input
+          type="text"
+          value={gameDir}
+          onChange={e => setGameDir(e.target.value)}
+          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+        />
+      </div>
 
-        <Label>Modded Launcher (EXE)</Label>
-        <Input value={moddedLauncher} onChange={e=>setModdedLauncher(e.target.value)} />
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Live Launcher URL</label>
+        <input
+          type="text"
+          value={liveLauncher}
+          onChange={e => setLiveLauncher(e.target.value)}
+          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+        />
+      </div>
 
-        <Button type="submit">Save Paths</Button>
-      </FormGroup>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Modded Launcher EXE</label>
+        <input
+          type="text"
+          value={moddedLauncher}
+          onChange={e => setModdedLauncher(e.target.value)}
+          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+        />
+      </div>
 
-      <FormGroup onSubmit={saveCount}>
-        <Label>Player Count</Label>
-        <div>
+      {/* <button
+        type="submit"
+        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700"
+      >
+        Save Paths
+      </button> */}
+
+      <fieldset className="mt-8">
+        <legend className="text-sm font-medium text-gray-700 mb-2">Player Count</legend>
+        <div className="space-x-4">
           {['2','3'].map(n => (
-            <label key={n} style={{marginRight:'1rem'}}>
+            <label key={n} className="inline-flex items-center space-x-1">
               <input
                 type="radio"
                 value={n}
-                checked={playerCount===n}
-                onChange={()=>setPlayerCount(n)}
-              />{' '}
-              {n} Players
+                checked={playerCount === n}
+                onChange={() => setPlayerCount(n)}
+                className="text-blue-600"
+              />
+              <span>{n} Players</span>
             </label>
           ))}
         </div>
-        <Button type="submit">Save Player Count</Button>
-      </FormGroup>
+        <button
+          type="button"
+          onClick={saveCount}
+          className="mt-4 inline-flex items-center px-4 py-2 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700"
+        >
+          Save Player Count
+        </button>
+      </fieldset>
 
       {status && (
-        <Status error={status.error}>{status.text}</Status>
+        <p className={`mt-4 text-sm ${status.error ? 'text-red-600' : 'text-green-600'}`}>
+          {status.text}
+        </p>
       )}
-    </Panel>
+    </form>
   );
 }
