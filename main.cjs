@@ -39,11 +39,12 @@ function saveConfig(updates) {
 ipcMain.handle('read-config',    () => loadConfig());
 ipcMain.handle('write-config',   (_e, upd) => (saveConfig(upd), true));
 
+
 app.whenReady().then(() => {
   ensureConfig();
   const win = new BrowserWindow({
     width: 400, height: 500,
-    webPreferences: { preload: path.join(__dirname,'preload.js'), contextIsolation:true }
+    webPreferences: { preload: path.join(__dirname,'preload.cjs'), contextIsolation:true }
   });
-  win.loadFile(path.join(__dirname,'renderer','dist','index.html'));
+  win.loadFile(path.join(__dirname,'dist','index.html'));
 });
