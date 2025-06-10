@@ -3,6 +3,7 @@ const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const fs        = require('fs');
 const fsp       = fs.promises;
 const path      = require('path');
+const exists    = fs.existsSync;
 const ini       = require('ini');
 const { execFile } = require('child_process');
 
@@ -12,10 +13,15 @@ const USER_CFG_PATH = path.join(USER_CFG_DIR, 'config.ini');
 // 1) Ensure we have a writable copy of config.ini
 function ensureConfig() {
   if (!fs.existsSync(USER_CFG_DIR)) fs.mkdirSync(USER_CFG_DIR, { recursive: true });
-  if (!fs.existsSync(USER_CFG_PATH)) {
-    fs.copyFileSync(path.join(__dirname, 'assets', 'config.ini'), USER_CFG_PATH);
-  }
-}
+  // copy out our template on first run
+  if (!exists(USER_CFG_PATH)) {
+    // look for template in assets/config.template.ini (you should add this file)
+    const devTpl  = path.join(__dirname, 'assets', 'config.template.ini');
+    const prodTpl = path.join(process.resourcesPath, 'assets', 'config.template.ini');
+    const tpl     = app.isPackaged && fs.existsSync(prodTpl) ? prodTpl : devTpl;
+    fs.copyFileSync(tpl, USER_CFG_PATH);
+  }  }
+
 
 // 2) Load & parse the INI
 function loadConfig() {

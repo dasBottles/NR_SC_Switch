@@ -1,7 +1,7 @@
 {
   "name": "nightshift",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.0.0",
   "type": "commonjs",
   "main": "main.cjs",
   "scripts": {
@@ -9,6 +9,28 @@
     "build:ui": "vite build",
     "build": "npm run build:ui && electron-builder",
     "start": "electron ."
+  },
+   "build": {
+    "appId": "com.yourname.nightshift",
+    "productName": "NightShift",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "assets/**/*",
+      "scripts/**/*",
+      "dist/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "portable",
+        "zip"
+      ],
+      "icon": "assets/icon.ico"
+    }
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.8",
